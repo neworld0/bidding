@@ -417,14 +417,13 @@ class CalEngine:
         self.hard_min_history = hard_min_history
         self.regime_on = regime_on
         self.shrink_on = shrink_on
-        self.cache: Dict[Tuple[str, int], CalResult] = {}
+        self.cache: Dict[Tuple[str, int, str], CalResult] = {}
 
-    def predict(self, history_file: str, open_month: int) -> CalResult:
-        key = (history_file, int(open_month))
+    def predict(self, history_file: str, open_month: int, trade: str) -> CalResult:
+        safe_trade = re.sub(r"[^\w\s]", "", str(trade)).strip()
+        key = (history_file, int(open_month), safe_trade)
         if key in self.cache:
             return self.cache[key]
-        # 특수문자가 제거된 안전한 업종명 생성 (인자 전달 오류 방지)
-        safe_trade = re.sub(r'[^\w\s]', '', str(key[0])).strip()
 
         cmd = [
             sys.executable,
@@ -637,7 +636,7 @@ def run_backtest(
                 continue
 
             # cal 호출
-            cres = engine.predict(matched_hf.path, om)
+            cres = engine.predict(matched_hf.path, om, str(trade))
 
             # (패치2) pred_error도 detail에 반드시 기록(+rc/에러헤더)
             if not cres.ok:
